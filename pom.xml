@@ -96,6 +96,12 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+    
+        <dependency>
+            <groupId>org.bsc.maven</groupId>
+            <artifactId>confluence-rest-api</artifactId>
+            <version>7.13</version>
+        </dependency>
     </dependencies>
 
     <build>
