@@ -3,6 +3,7 @@ package com.myblog.cms.service;
 import org.springframework.stereotype.Service;
 
 import com.myblog.cms.dto.CreateBlogPostRequest;
+import com.myblog.cms.exception.PostNotFoundException;
 import com.myblog.cms.model.BlogPost;
 import com.myblog.cms.repository.BlogPostRepository;
 
@@ -21,5 +22,10 @@ public class BlogPostService {
         post.setContent(request.content());
         post.setAuthor(request.author());
         return repository.save(post);
+    }
+
+    public BlogPost findBySlug(String slug) {
+        return repository.findBySlug(slug)
+                .orElseThrow(() -> new PostNotFoundException("Post with slug '" + slug + "' not found."));
     }
 }

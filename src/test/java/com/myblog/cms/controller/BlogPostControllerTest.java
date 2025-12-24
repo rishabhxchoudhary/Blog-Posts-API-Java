@@ -12,12 +12,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myblog.cms.dto.CreateBlogPostRequest;
+import com.myblog.cms.exception.PostNotFoundException;
 import com.myblog.cms.model.BlogPost;
 import com.myblog.cms.service.BlogPostService;
 
@@ -66,6 +68,36 @@ public class BlogPostControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(serviceResult.getId().toString()));
 
+    }
+
+    @Test
+    void shouldReturnPostWhenSlugExists() throws Exception {
+        BlogPost blog = new BlogPost();
+        blog.setTitle("test-title");
+        blog.setAuthor("rishabh");
+        blog.setContent("test-content");
+        blog.setSlug("test-slug");
+        blog.setId(UUID.randomUUID());
+
+        when(blogPostService.findBySlug(blog.getSlug())).thenReturn(blog);
+
+        mockMvc.perform(get("/api/posts/{slug}", "test-slug"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(blog.getId().toString()))
+                .andExpect(jsonPath("$.title").value(blog.getTitle()))
+                .andExpect(jsonPath("$.slug").value(blog.getSlug()));
+    }
+
+    @Test
+    void shouldReturn404WhenSlugNotFound() throws Exception {
+        // Arrange
+        String slug = "non-existent-slug";
+        when(blogPostService.findBySlug(slug))
+                .thenThrow(new PostNotFoundException("Post not found"));
+
+        // Act & Assert
+        mockMvc.perform(get("/api/posts/{slug}", slug))
+                .andExpect(status().isNotFound());
     }
 
 }
