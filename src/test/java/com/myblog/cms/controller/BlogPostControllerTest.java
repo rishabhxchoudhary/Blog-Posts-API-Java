@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -12,6 +14,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -30,122 +34,140 @@ import com.myblog.cms.service.BlogPostService;
 @WebMvcTest(BlogPostController.class)
 public class BlogPostControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @MockitoBean
-    private BlogPostService blogPostService;
+        @MockitoBean
+        private BlogPostService blogPostService;
 
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public ObjectMapper objectMapper() {
-            return new ObjectMapper();
+        @TestConfiguration
+        static class TestConfig {
+                @Bean
+                public ObjectMapper objectMapper() {
+                        return new ObjectMapper();
+                }
         }
-    }
 
-    @Test
-    void shouldCreatePostAndReturn201() throws Exception {
-        CreateBlogPostRequest requestDto = new CreateBlogPostRequest(
-                "my-api-slug",
-                "some cool content from api",
-                "My API Title",
-                "Rishabh");
+        @Test
+        void shouldCreatePostAndReturn201() throws Exception {
+                CreateBlogPostRequest requestDto = new CreateBlogPostRequest(
+                                "my-api-slug",
+                                "some cool content from api",
+                                "My API Title",
+                                "Rishabh");
 
-        // This is the object we expect the service to return
-        BlogPost serviceResult = new BlogPost();
-        serviceResult.setId(UUID.randomUUID());
-        serviceResult.setSlug(requestDto.slug());
-        serviceResult.setTitle(requestDto.title());
+                // This is the object we expect the service to return
+                BlogPost serviceResult = new BlogPost();
+                serviceResult.setId(UUID.randomUUID());
+                serviceResult.setSlug(requestDto.slug());
+                serviceResult.setTitle(requestDto.title());
 
-        when(blogPostService.createPost(any(CreateBlogPostRequest.class))).thenReturn(serviceResult);
+                when(blogPostService.createPost(any(CreateBlogPostRequest.class))).thenReturn(serviceResult);
 
-        mockMvc.perform(
-                post("/api/posts")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(serviceResult.getId().toString()));
+                mockMvc.perform(
+                                post("/api/posts")
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(requestDto)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").value(serviceResult.getId().toString()));
 
-    }
+        }
 
-    @Test
-    void shouldReturnPostWhenSlugExists() throws Exception {
-        BlogPost blog = new BlogPost();
-        blog.setTitle("test-title");
-        blog.setAuthor("rishabh");
-        blog.setContent("test-content");
-        blog.setSlug("test-slug");
-        blog.setId(UUID.randomUUID());
+        @Test
+        void shouldReturnPostWhenSlugExists() throws Exception {
+                BlogPost blog = new BlogPost();
+                blog.setTitle("test-title");
+                blog.setAuthor("rishabh");
+                blog.setContent("test-content");
+                blog.setSlug("test-slug");
+                blog.setId(UUID.randomUUID());
 
-        when(blogPostService.findBySlug(blog.getSlug())).thenReturn(blog);
+                when(blogPostService.findBySlug(blog.getSlug())).thenReturn(blog);
 
-        mockMvc.perform(get("/api/posts/{slug}", "test-slug"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(blog.getId().toString()))
-                .andExpect(jsonPath("$.title").value(blog.getTitle()))
-                .andExpect(jsonPath("$.slug").value(blog.getSlug()));
-    }
+                mockMvc.perform(get("/api/posts/{slug}", "test-slug"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(blog.getId().toString()))
+                                .andExpect(jsonPath("$.title").value(blog.getTitle()))
+                                .andExpect(jsonPath("$.slug").value(blog.getSlug()));
+        }
 
-    @Test
-    void shouldReturn404WhenSlugNotFound() throws Exception {
-        // Arrange
-        String slug = "non-existent-slug";
-        when(blogPostService.findBySlug(slug))
-                .thenThrow(new PostNotFoundException("Post not found"));
+        @Test
+        void shouldReturn404WhenSlugNotFound() throws Exception {
+                // Arrange
+                String slug = "non-existent-slug";
+                when(blogPostService.findBySlug(slug))
+                                .thenThrow(new PostNotFoundException("Post not found"));
 
-        // Act & Assert
-        mockMvc.perform(get("/api/posts/{slug}", slug))
-                .andExpect(status().isNotFound());
-    }
+                // Act & Assert
+                mockMvc.perform(get("/api/posts/{slug}", slug))
+                                .andExpect(status().isNotFound());
+        }
 
-    @Test
-    void shouldUpdatePostAndReturnOk() throws Exception {
-        String slug = "existing-slug";
-        BlogPost existingBlog = new BlogPost();
-        existingBlog.setSlug(slug);
-        existingBlog.setTitle("Test Title");
-        existingBlog.setAuthor("Test Author");
-        existingBlog.setContent("Test Content");
-        existingBlog.setId(UUID.randomUUID());
+        @Test
+        void shouldUpdatePostAndReturnOk() throws Exception {
+                String slug = "existing-slug";
+                BlogPost existingBlog = new BlogPost();
+                existingBlog.setSlug(slug);
+                existingBlog.setTitle("Test Title");
+                existingBlog.setAuthor("Test Author");
+                existingBlog.setContent("Test Content");
+                existingBlog.setId(UUID.randomUUID());
 
-        BlogPost updatedPost = new BlogPost();
-        updatedPost.setId(existingBlog.getId());
+                BlogPost updatedPost = new BlogPost();
+                updatedPost.setId(existingBlog.getId());
 
-        UpdateBlogPostRequest updateRequest = new UpdateBlogPostRequest(
-                "Updated Title", "Updated Content", "Updated Author");
+                UpdateBlogPostRequest updateRequest = new UpdateBlogPostRequest(
+                                "Updated Title", "Updated Content", "Updated Author");
 
-        updatedPost.setTitle(updateRequest.title());
-        updatedPost.setContent(updateRequest.content());
-        updatedPost.setAuthor(updateRequest.author());
+                updatedPost.setTitle(updateRequest.title());
+                updatedPost.setContent(updateRequest.content());
+                updatedPost.setAuthor(updateRequest.author());
 
-        when(blogPostService.updatePost(slug, updateRequest)).thenReturn(updatedPost);
+                when(blogPostService.updatePost(slug, updateRequest)).thenReturn(updatedPost);
 
-        mockMvc.perform(put("/api/posts/{slug}", slug)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateRequest))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(existingBlog.getId().toString()))
-                .andExpect(jsonPath("$.title").value(updatedPost.getTitle()))
-                .andExpect(jsonPath("$.slug").value(updatedPost.getSlug()))
-                .andExpect(jsonPath("$.content").value(updatedPost.getContent()))
-                .andExpect(jsonPath("$.author").value(updatedPost.getAuthor()));
-    }
+                mockMvc.perform(put("/api/posts/{slug}", slug)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updateRequest))).andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(existingBlog.getId().toString()))
+                                .andExpect(jsonPath("$.title").value(updatedPost.getTitle()))
+                                .andExpect(jsonPath("$.slug").value(updatedPost.getSlug()))
+                                .andExpect(jsonPath("$.content").value(updatedPost.getContent()))
+                                .andExpect(jsonPath("$.author").value(updatedPost.getAuthor()));
+        }
 
-    @Test
-    void shouldReturn404WhenUpdatingNonExistentPost() throws Exception {
-        String slug = "non-existent-slug";
-        UpdateBlogPostRequest updateRequest = new UpdateBlogPostRequest(
-                "Updated Title", "Updated Content", "Updated Author");
-        when(blogPostService.updatePost(slug, updateRequest))
-                .thenThrow(new PostNotFoundException("Post not found"));
+        @Test
+        void shouldReturn404WhenUpdatingNonExistentPost() throws Exception {
+                String slug = "non-existent-slug";
+                UpdateBlogPostRequest updateRequest = new UpdateBlogPostRequest(
+                                "Updated Title", "Updated Content", "Updated Author");
+                when(blogPostService.updatePost(slug, updateRequest))
+                                .thenThrow(new PostNotFoundException("Post not found"));
 
-        mockMvc.perform(put("/api/posts/{slug}", slug)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateRequest)))
-                .andExpect(status().isNotFound());
-    }
+                mockMvc.perform(put("/api/posts/{slug}", slug)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updateRequest)))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldDeletePostAndReturnNoContent() throws Exception {
+                String slug = "existing-slug";
+                doNothing().when(blogPostService).deletePost(slug);
+                mockMvc.perform(delete("/api/posts/{slug}", slug)).andExpect(status().isNoContent());
+
+        }
+
+        @Test
+        void shouldReturn404WhenDeletingNonExistentPost() throws Exception {
+                String slug = "non-existent-slug";
+                doThrow(new PostNotFoundException("Post not found"))
+                                .when(blogPostService).deletePost(slug);
+
+                mockMvc.perform(delete("/api/posts/{slug}", slug))
+                                .andExpect(status().isNotFound());
+        }
 
 }
