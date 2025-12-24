@@ -38,4 +38,10 @@ public class BlogPostService {
         existingBlog.setAuthor(request.author());
         return repository.save(existingBlog);
     }
+
+    public void deletePost(String slug) {
+        BlogPost existingBlog = repository.findBySlug(slug)
+                .orElseThrow(() -> new PostNotFoundException("Post with slug '" + slug + "' not found."));
+        repository.delete(existingBlog);
+    }
 }

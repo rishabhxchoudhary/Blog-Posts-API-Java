@@ -109,4 +109,35 @@ public class BlogPostServiceTest {
             service.updatePost(slug, updateRequest);
         }).isInstanceOf(PostNotFoundException.class);
     }
+
+    @Test
+    void shouldDeletePostSuccessfully() {
+        final String SLUG = "test-slug";
+        BlogPost existingPost = new BlogPost();
+        existingPost.setId(UUID.randomUUID());
+        existingPost.setSlug(SLUG);
+        existingPost.setTitle("Original Title");
+        existingPost.setContent("Original Content");
+        existingPost.setAuthor("Original Author");
+
+        when(repository.findBySlug(SLUG)).thenReturn(Optional.of(existingPost));
+        service.deletePost(SLUG);
+
+        ArgumentCaptor<BlogPost> blogPostCaptor = ArgumentCaptor.forClass(BlogPost.class);
+
+        verify(repository, times(1)).delete(blogPostCaptor.capture());
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenDeletingNonExistentPost() {
+        String slug = "non-existent-slug";
+        when(repository.findBySlug(slug)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> {
+            service.deletePost(slug);
+        })
+                .isInstanceOf(PostNotFoundException.class)
+                .hasMessage("Post with slug 'non-existent-slug' not found.");
+
+    }
 }
