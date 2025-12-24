@@ -5,11 +5,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.myblog.cms.dto.CreateBlogPostRequest;
+import com.myblog.cms.dto.UpdateBlogPostRequest;
 import com.myblog.cms.model.BlogPost;
 import com.myblog.cms.service.BlogPostService;
 
@@ -33,4 +35,10 @@ public class BlogPostController {
         return blogPostService.findBySlug(slug);
     }
 
+    @PutMapping("/posts/{slug}")
+    public BlogPost updatePost(@PathVariable String slug, @RequestBody UpdateBlogPostRequest updateRequest) {
+        BlogPost updatedPost = blogPostService.updatePost(slug, updateRequest);
+        return updatedPost;
+    }
+    
 }
